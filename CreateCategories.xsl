@@ -52,6 +52,25 @@
                     </Item>
                 </Items>
             </Item>
+            <Item xsi:type="ComicListItemFolder" Name="Arcs">
+                <NewBookCountDate/>
+                <CacheStorage/>
+                <Display/>
+                <Items>
+                    <Item xsi:type="ComicListItemFolder" Name="Completos">
+                        <NewBookCountDate/>
+                        <CacheStorage/>
+                        <Display/>
+                        <xsl:call-template name="createArcsCompleteFolder" />
+                    </Item>
+                    <Item xsi:type="ComicListItemFolder" Name="Incompletos">
+                        <NewBookCountDate/>
+                        <CacheStorage/>
+                        <Display/>
+                        <xsl:call-template name="createArcsIncompleteFolder" />
+                    </Item>
+                </Items>
+            </Item>
         </Items>
     </xsl:template>
 
@@ -119,6 +138,34 @@
                 <xsl:sort select="."/>
 
                 <xsl:call-template name="createSeriesIncompleteList" >
+                    <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
+                </xsl:call-template>
+
+            </xsl:for-each>
+        </Items>
+    </xsl:template>
+
+    <!-- Create the Folder for Arcs/Complete -->
+    <xsl:template name='createArcsCompleteFolder'>
+        <Items>
+            <xsl:for-each select='//Book/AlternateSeries[not(.=preceding::Book/AlternateSeries)]'>
+                <xsl:sort select="."/>
+
+                <xsl:call-template name="createArcsCompleteList" >
+                    <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
+                </xsl:call-template>
+
+            </xsl:for-each>
+        </Items>
+    </xsl:template>
+
+    <!-- Create the Folder for Arcs/Incomplete -->
+    <xsl:template name='createArcsIncompleteFolder'>
+        <Items>
+            <xsl:for-each select='//Book/AlternateSeries[not(.=preceding::Book/AlternateSeries)]'>
+                <xsl:sort select="."/>
+
+                <xsl:call-template name="createArcsIncompleteList" >
                     <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
                 </xsl:call-template>
 
@@ -213,15 +260,49 @@
         </xsl:if>
     </xsl:template>
 
+    <!--
+       - Create the lists of Comnplete comics. A list per comic series will be created,
+       - if the serie:
+       -     and have more or equal comics than the AlternateCount
+    -->
+    <xsl:template name="createArcsCompleteList">
+        <xsl:param name="listName">-</xsl:param>
+
+        <xsl:if test="count(//Book[AlternateSeries=$listName])>=number(../AlternateCount)">
+            <xsl:message>- Arc complete: <xsl:value-of select="."/></xsl:message>
+            <xsl:call-template name="createDynamicList_IS">
+                <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
+                <xsl:with-param name="matcher">ComicBookAlternateSeriesMatcher</xsl:with-param>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+
+    <!--
+       - Create the lists of Comnplete comics. A list per comic series will be created,
+       - if the serie:
+       -     and have more or equal comics than the AlternateCount
+    -->
+    <xsl:template name="createArcsIncompleteList">
+        <xsl:param name="listName">-</xsl:param>
+
+        <xsl:if test="number(../AlternateCount)>count(//Book[AlternateSeries=$listName]) or not(../AlternateCount)">
+            <xsl:message>- Arc Incomplete: <xsl:value-of select="."/></xsl:message>
+            <xsl:call-template name="createDynamicList_IS">
+                <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
+                <xsl:with-param name="matcher">ComicBookAlternateSeriesMatcher</xsl:with-param>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
 
     <!-- Creates a DynamicList using the matcher IS. The name of the list will be the currentNode -->
     <xsl:template name="createDynamicList_IS">
         <xsl:param name="listName">-</xsl:param>
+        <xsl:param name="matcher">ComicBookSeriesMatcher</xsl:param>
 
         <xsl:choose>
 
             <!-- Try to reuse old list, if present -->
-            <xsl:when test='//Items/Item[@Name=$listName]'>
+            <xsl:when test='//Items/Item[@Name=$listName]//ComicBookMatcher[@*=$matcher]'>
                 <xsl:message>   [OLD] <xsl:value-of select="$listName"/></xsl:message>
                 <!--TODO Investigate how to do this using '.' instead $listName-->
                  <xsl:copy-of select='(//Items/Item[@Name=$listName])[1]'/>
@@ -234,7 +315,7 @@
                     <CacheStorage/>
                     <Display/>
                     <Matchers>
-                        <ComicBookMatcher xsi:type="ComicBookSeriesMatcher">
+                        <ComicBookMatcher xsi:type="{$matcher}">
                             <MatchValue><xsl:value-of select="$listName"/></MatchValue>
                         </ComicBookMatcher>
                     </Matchers>
