@@ -215,11 +215,12 @@
        - if the serie:
        -     has fewer comics than SeriesCount
        -     SeriesCount is bigger than one
+       -     is not marked as Complete
     -->
     <xsl:template name="createSeriesIncompleteList">
         <xsl:param name="listName">-</xsl:param>
 
-        <xsl:if test="../Count > count(//Book[Series=$listName]) and ../Count>1">
+        <xsl:if test="../Count > count(//Book[Series=$listName]) and ../Count>1 and (not(../SeriesComplete) or ../SeriesComplete!='Yes')">
             <xsl:message>- Incomplete: <xsl:value-of select="."/></xsl:message>
             <xsl:call-template name="createDynamicList_IS">
                 <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
@@ -231,11 +232,12 @@
        - Create the lists of Ongoing comics. A list per comic series will be created,
        - if the serie:
        -     don't have SeriesCount
+       -     is not marked as Complete
     -->
     <xsl:template name="createSeriesOngoingList">
         <xsl:param name="listName">-</xsl:param>
 
-        <xsl:if test="not(../Count)">
+        <xsl:if test="not(../Count) and (not(../SeriesComplete) or ../SeriesComplete!='Yes')">
             <xsl:message>- Ongoing: <xsl:value-of select="."/></xsl:message>
             <xsl:call-template name="createDynamicList_IS">
                 <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
@@ -248,11 +250,12 @@
        - if the serie:
        -     and have more or equal comics than the SeriesCount
        -     and SeriesCount is bigger than 12
+       - Can be overriden with SeriesComplete
     -->
     <xsl:template name="createSeriesCompleteList">
         <xsl:param name="listName">-</xsl:param>
 
-        <xsl:if test="count(//Book[Series=$listName]) > 1 and count(//Book[Series=$listName])>=number(../Count) and ../Count > 12">
+        <xsl:if test="(count(//Book[Series=$listName]) > 1 and count(//Book[Series=$listName])>=number(../Count) and ../Count > 12) or ../SeriesComplete='Yes'">
             <xsl:message>- Complete: <xsl:value-of select="."/></xsl:message>
             <xsl:call-template name="createDynamicList_IS">
                 <xsl:with-param name="listName"><xsl:value-of select="."/></xsl:with-param>
